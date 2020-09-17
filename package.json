@@ -1,6 +1,6 @@
 {
   "name": "wirenboard-module-smoke",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Smoke manager",
   "main": "./wb-rules-modules/smoke.js",
   "keywords": [

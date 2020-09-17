@@ -7,7 +7,7 @@
 // TODO: enabled/disabled - prevent/react current
 
 var MODULE_NAME 		= "smoke";
-var MODULE_VERSION  = "v.1.9";
+var MODULE_VERSION  = "v.1.10";
 
 var data = {};
 
@@ -17,6 +17,7 @@ exports.start = function(config) {
 	//  init data  //
 	data[config.id] = {};
 	data[config.id].timer_shotDuration = null;
+	data[config.id].timer_power = null;
 
 	//  device  //
 	createDevice(config);
@@ -24,6 +25,7 @@ exports.start = function(config) {
 	//  rules  //
 	createRule_BTN_sessionReset(config.id, config.onGone);
 	createRule_BTN_test(config.id);
+	createRule_SWITCH_power(config.id, config.power.device, config.power.control);
 	createRule_VALUE_smoke(config.id, config.onShot, config.onGone);
 	config.sensors.forEach( function(item) {
 		createRule_externalSensor(config.id,
@@ -70,12 +72,14 @@ var validateConfig = function(_config) {
 function createDevice(config) {
 	var cells = {
 		enabled: 								{ type: "switch", value: true, readonly: false },
+		version: 								{ type: "text", value: MODULE_VERSION },
 		shot_timeout_sec: 			{ type: "range",  max: 300, value: 60, readonly: false },
 		session_max_shots: 			{ type: "range",  max: 10, 	value: 3, readonly: false },
 		session_shots_counter: 	{ type: "value", 	value: 0, readonly: false },
 		session_reset: 					{ type: "pushbutton", readonly: false },
 		smoke: 									{ type: "value", 	value: 0, readonly: false },
 		test: 									{ type: "pushbutton", readonly: false },
+		power: 								  { type: "switch", value: true, readonly: false },
 	}
 
 	config.sensors.forEach( function(item) {
@@ -170,6 +174,8 @@ function createRule_BTN_sessionReset(device_id, cb_onGone) {
   defineRule({
     whenChanged: device_id + "/session_reset",
     then: function (newValue, devName, cellName)  {
+			log(device_id + ": session_reset");
+
 			//  clear smoke flag  //
 			if (dev[device_id]["smoke"] !== 0) dev[device_id]["smoke"] = 0;
 
@@ -185,4 +191,29 @@ function createRule_BTN_sessionReset(device_id, cb_onGone) {
 			if (cb_onGone) cb_onGone();
     }
   });
+}
+
+function createRule_SWITCH_power(device_id, power_device, power_control) {
+	defineRule({
+		whenChanged: device_id + "/power",
+		then: function (newValue, devName, cellName) {
+			dev[power_device][power_control] = newValue;
+
+			//  on power off  //
+			if (!newValue) {
+				log(device_id + ": Power reset");
+				data[device_id].timer_power = setTimeout(function() {
+					data[device_id].timer_power = null;
+					dev[device_id]["session_reset"] = true;
+					dev[device_id]["power"] = true;
+	      }, 5000);
+			}
+
+			//  power on  //
+			else {
+				if (data[device_id].timer_power) clearTimeout(data[device_id].timer_power);
+				data[device_id].timer_power = null;
+			}
+		}
+	});
 }

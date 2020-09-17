@@ -14,6 +14,17 @@ Smoke manager
     },
     "integerValue": true,
     "accessory": "mqttthing"
+  },
+  {
+      "comment": "-------------------------  Smoke: Power  -------------------------",
+      "type": "switch",
+      "name": "Дым Питание",
+      "topics": {
+          "getOn": "/devices/smoke/controls/power",
+          "setOn": "/devices/smoke/controls/power/on"
+      },
+      "integerValue": true,
+      "accessory": "mqttthing"
   }
 ]
 ```
